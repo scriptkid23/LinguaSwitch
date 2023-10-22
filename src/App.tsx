@@ -3,7 +3,10 @@ import "./App.css";
 import { lang } from "./data";
 
 function App() {
+  const [la, setLang] = React.useState<string>("en");
+
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    setLang(e.target.value);
     chrome.tabs &&
       chrome.tabs.query(
         {
@@ -39,6 +42,7 @@ function App() {
               className="form-select"
               aria-label="Default select example"
               name="to"
+              value={la}
               onChange={(e) => handleChange(e)}
             >
               {Object.keys(lang).map((key: string, index: number) => (
