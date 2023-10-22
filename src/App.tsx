@@ -4,7 +4,7 @@ import "./App.css";
 function App() {
   return (
     <div className="App">
-      <h1>SEO Extension built with React!</h1>
+      <h1>Only usable on Facebook</h1>
     </div>
   );
 }
