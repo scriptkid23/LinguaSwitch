@@ -1,0 +1,10 @@
+#transform-language {
+  position: fixed;
+  width: 22px;
+  height: 22px;
+  background-image: url("/public/translate.png");
+  background-size: cover;
+  cursor: pointer;
+  margin-top: 0.2em;
+  z-index: 2147483647;
+}
