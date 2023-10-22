@@ -1,6 +1,9 @@
 const _ = require("lodash");
 
-export {}
+var from = "vi";
+var to = "en";
+
+export {};
 function facebookUpdate(actEl: any, text: any) {
   //@ts-ignore
   if (document.body.parentElement.id == "facebook") {
@@ -66,7 +69,7 @@ const debounceHandler = _.debounce(function (text: string) {
 
     xhr.open(
       "POST",
-      "https://microsoft-translator-text.p.rapidapi.com/translate?to%5B0%5D=en&api-version=3.0&profanityAction=NoAction&textType=plain"
+      `https://microsoft-translator-text.p.rapidapi.com/translate?to%5B0%5D=${to}&api-version=3.0&profanityAction=NoAction&textType=plain`
     );
     xhr.setRequestHeader("content-type", "application/json");
     xhr.setRequestHeader(
@@ -88,5 +91,12 @@ document.addEventListener("keyup", function (event: any) {
   if (event.target.getAttribute("aria-label") === "Message") {
     var text = event.target.textContent;
     debounceHandler(text);
+  }
+});
+
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  if (request.data) {
+    console.log(to)
+    to = request.data.to;
   }
 });

@@ -14,17 +14,20 @@ module.exports = {
       );
       if (cssLoader) {
         if (isDevelopment) {
-          // Sử dụng style-loader trong môi trường development
           cssLoader.use.unshift("style-loader");
         } else {
-          // Sử dụng MiniCssExtractPlugin.loader trong môi trường production
           cssLoader.use.unshift(MiniCssExtractPlugin.loader);
         }
       }
 
-      
       return {
         ...webpackConfig,
+        resolve: {
+          ...webpackConfig.resolve,
+          fallback: {
+            url: require.resolve("url/"),
+          },
+        },
         entry: {
           main: [
             env === "development" &&
