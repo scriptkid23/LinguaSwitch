@@ -12,19 +12,19 @@ To install LinguaSwitch, follow the steps below:
 
 1. Ensure that you have the [Google Chrome](https://www.google.com/chrome/) browser installed on your computer.
 2. Clone the LinguaSwitch repository to your local machine using the following command:
-   ````
-   git clone [repository_url]
+   ```bash
+    git clone https://github.com/scriptkid23/LinguaSwitch.git
    ```
 3. Navigate to the cloned repository's directory.
 4. Build the extension using the following command:
-   ````
-   yarn build
+   ```bash
+    yarn build
    ```
 5. Open the Chrome browser and go to the extension management page by entering `chrome://extensions` in the address bar.
 6. Enable the "Developer mode" option located in the top right corner of the extensions page.
 7. Click on the "Load unpacked" button and select the folder where you cloned the LinguaSwitch repository.
 8. Once the extension is loaded, you should see the LinguaSwitch icon added to your browser toolbar.
-9. LinguaSwitch is now successfully installed and ready to use.
+9.  LinguaSwitch is now successfully installed and ready to use.
 
 ## Usage
 
