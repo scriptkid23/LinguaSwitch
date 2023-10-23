@@ -5,15 +5,21 @@ import { lang } from "./data";
 function App() {
   const [la, setLang] = React.useState<string>("en");
 
-  const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setLang(e.target.value);
+  React.useEffect(() => {
+    chrome.storage.local.get(["la"], (result) => {
+      setLang(result.la || "en");
+      sendToServiceWorker(result.la);
+    });
+  }, []);
+
+  const sendToServiceWorker = (la: string) => {
     chrome.tabs &&
       chrome.tabs.query(
         {
           active: true,
           currentWindow: true,
         },
-        (tabs) => {
+        async (tabs) => {
           /**
            * Sends a single message to the content script(s) in the specified tab,
            * with an optional callback to run when a response is sent back.
@@ -21,13 +27,26 @@ function App() {
            * The runtime.onMessage event is fired in each content script running
            * in the specified tab for the current extension.
            */
-          chrome.tabs.sendMessage(tabs[0].id || 0, {
+          if (
+            tabs[0].url &&
+            /chrome:\/\/extensions|chrome:\/\/newtab\//i.test(tabs[0].url)
+          )
+            return;
+
+          await chrome.tabs.sendMessage(tabs[0].id || 0, {
             data: {
-              to: e.target.value,
+              to: la,
             },
           });
         }
       );
+  };
+
+  const handleChange = async (e: ChangeEvent<HTMLSelectElement>) => {
+    setLang(e.target.value);
+    sendToServiceWorker(e.target.value);
+
+    await chrome.storage.local.set({ la: e.target.value });
   };
   return (
     <div className="App">

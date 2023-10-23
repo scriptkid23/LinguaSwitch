@@ -14,7 +14,7 @@
       "css": ["./static/css/main.css"]
     }
   ],
-  "permissions": ["activeTab", "clipboardRead"],
+  "permissions": ["activeTab", "clipboardRead", "storage"],
   "icons": {
     "16": "logo64.png",
     "48": "logo96.png",

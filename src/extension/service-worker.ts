@@ -96,7 +96,6 @@ document.addEventListener("keyup", function (event: any) {
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.data) {
-    console.log(to);
     to = request.data.to;
   }
 });
