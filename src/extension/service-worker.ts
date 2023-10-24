@@ -1,96 +1,103 @@
+import { SupportPlatform } from "./constants";
+import { facebookUpdate, instagramUpdate, telegramUpdate } from "./support";
 const _ = require("lodash");
 
-var from = "vi";
 var to = "en";
+var current: string;
 
-export {};
-function facebookUpdate(actEl: any, text: any) {
-  //@ts-ignore
-  if (document.body.parentElement.id == "facebook") {
-    var dc = getDeepestChild(actEl);
-    var elementToDispatchEventFrom = dc.parentElement;
-    let newEl;
-    if (dc.nodeName.toLowerCase() == "br") {
-      // attempt to paste into empty messenger field
-      // by creating new element and setting it's value
-      newEl = document.createElement("span");
-      newEl.setAttribute("data-lexical-text", "true");
-      dc.parentElement.appendChild(newEl);
-      newEl.innerText = text;
-    } else {
-      // attempt to paste into not empty messenger field
-      // by changing existing content
-      dc.textContent = text;
-      elementToDispatchEventFrom = elementToDispatchEventFrom.parentElement;
-    }
-    // simulate user's input
-    elementToDispatchEventFrom.dispatchEvent(
-      new InputEvent("input", { bubbles: true })
-    );
-    // remove new element if it exists
-    // otherwise there will be two of them after
-    // Facebook adds it itself!
-    if (newEl) newEl.remove();
-  }
-}
-
-// helper function
-//@ts-ignore
-function getDeepestChild(element) {
-  if (element.lastChild) {
-    return getDeepestChild(element.lastChild);
-  } else {
-    return element;
-  }
-}
-
-const debounceHandler = _.debounce(function (text: string) {
-  const spanElement = document.querySelector(
-    'span[data-lexical-text="true"]'
-  ) as HTMLSpanElement;
-  if (!spanElement) return;
-
+const debounceHandler = _.debounce(function (text: string, update: any) {
   try {
-    const data = JSON.stringify([
-      {
-        Text: text,
-      },
-    ]);
-
+    console.log("trigger");
+    const url = "https://api.caipacity.com/v1/chat/completions";
     const xhr = new XMLHttpRequest();
-    xhr.withCredentials = true;
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: "Bearer e7345e89-2b91-4fc6-aaf2-3aaaa3ecbf1c",
+    };
+    const data = {
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "user",
+          content: `translate into ${to}: "${text}"`,
+        },
+      ],
+    };
 
     xhr.addEventListener("readystatechange", function () {
       if (this.readyState === this.DONE) {
-        const result = JSON.parse(this.responseText);
-        facebookUpdate(spanElement, result[0].translations[0].text);
+        console.log("trigger");
+
+        const response = JSON.parse(xhr.responseText);
+        const regex = /"(.*?)"/;
+
+        const match = response.choices[0].message.content.match(regex);
+
+        let result = response.choices[0].message.content;
+
+        if (match) {
+          result = match[1];
+        }
+        current = result;
+        update(result);
       }
     });
 
-    xhr.open(
-      "POST",
-      `https://microsoft-translator-text.p.rapidapi.com/translate?to%5B0%5D=${to}&api-version=3.0&profanityAction=NoAction&textType=plain`
-    );
-    xhr.setRequestHeader("content-type", "application/json");
-    xhr.setRequestHeader(
-      "X-RapidAPI-Key",
-      "e19b40ac60msh9a9aa94f4b7ceb0p1fc313jsna3265fab9699"
-    );
-    xhr.setRequestHeader(
-      "X-RapidAPI-Host",
-      "microsoft-translator-text.p.rapidapi.com"
-    );
-
-    xhr.send(data);
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Content-Type", headers["Content-Type"]);
+    xhr.setRequestHeader("Authorization", headers["Authorization"]);
+    xhr.send(JSON.stringify(data));
   } catch (error) {
     console.log(error);
   }
 }, 1000);
 
-document.addEventListener("keyup", function (event: any) {
-  if (event.target.getAttribute("aria-label") === "Message") {
-    var text = event.target.textContent;
-    debounceHandler(text);
+document.addEventListener("keyup", function (event: Event) {
+  if (!event || !event.target) return;
+
+  const targetElement = event.target as HTMLInputElement;
+
+  if (current === targetElement.textContent) return;
+
+  
+  switch (window.location.hostname) {
+    case SupportPlatform.Facebook:
+      if (targetElement.getAttribute("aria-label") === "Message") {
+        var text = targetElement.textContent;
+        if (text?.length === 0) return;
+        debounceHandler(text, facebookUpdate);
+      }
+      break;
+    case SupportPlatform.Instagram:
+      if (targetElement.getAttribute("aria-label") === "Message") {
+        var text = targetElement.textContent;
+        if (text?.length === 0) return;
+        debounceHandler(text, instagramUpdate);
+      }
+      break;
+    default:
+      break;
+  }
+});
+
+document.addEventListener("input", function (event: Event) {
+  if (!event || !event.target) return;
+
+  const targetElement = event.target as HTMLInputElement;
+
+  if (current === targetElement.textContent) return;
+
+  switch (window.location.hostname) {
+    case SupportPlatform.Telegram:
+      if (targetElement.getAttribute("aria-label") === "Message") {
+        var text = targetElement.textContent;
+        if (text?.length === 0) return;
+
+        debounceHandler(text, telegramUpdate);
+      }
+      break;
+    default:
+      break;
   }
 });
 
@@ -99,3 +106,5 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     to = request.data.to;
   }
 });
+
+export {};
