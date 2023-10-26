@@ -2,7 +2,7 @@ import { SupportPlatform } from "./constants";
 import { facebookUpdate, instagramUpdate, telegramUpdate } from "./support";
 const _ = require("lodash");
 
-var to = "en";
+var to: string;
 var current: string;
 
 const debounceHandler = _.debounce(function (text: string, update: any) {
@@ -59,7 +59,6 @@ document.addEventListener("keyup", function (event: Event) {
 
   if (current === targetElement.textContent) return;
 
-  
   switch (window.location.hostname) {
     case SupportPlatform.Facebook:
       if (targetElement.getAttribute("aria-label") === "Message") {
