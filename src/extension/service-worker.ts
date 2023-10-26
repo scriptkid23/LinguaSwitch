@@ -5,9 +5,10 @@ const _ = require("lodash");
 var to: string;
 var current: string;
 
-const debounceHandler = _.debounce(function (text: string, update: any) {
+const debounceHandler = _.debounce(async function (text: string, update: any) {
   try {
-    console.log("trigger");
+    const language = await chrome.storage.local.get(["la"]);
+
     const url = "https://api.caipacity.com/v1/chat/completions";
     const xhr = new XMLHttpRequest();
     const headers = {
@@ -19,7 +20,7 @@ const debounceHandler = _.debounce(function (text: string, update: any) {
       messages: [
         {
           role: "user",
-          content: `translate into ${to}: "${text}"`,
+          content: `translate into ${to ? to : language.la}: "${text}"`,
         },
       ],
     };
@@ -53,6 +54,12 @@ const debounceHandler = _.debounce(function (text: string, update: any) {
 }, 1000);
 
 document.addEventListener("keyup", function (event: Event) {
+  // if (event instanceof KeyboardEvent && event.key === "Enter") {
+  //   event.preventDefault();
+    
+  //   // remove data in LRU cache
+
+  // }
   if (!event || !event.target) return;
 
   const targetElement = event.target as HTMLInputElement;
