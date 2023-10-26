@@ -13,7 +13,7 @@ const debounceHandler = _.debounce(async function (text: string, update: any) {
     const xhr = new XMLHttpRequest();
     const headers = {
       "Content-Type": "application/json",
-      Authorization: "Bearer e7345e89-2b91-4fc6-aaf2-3aaaa3ecbf1c",
+      Authorization: "Bearer 8a3c3770-c747-4c42-927e-fa071406607d",
     };
     const data = {
       model: "gpt-3.5-turbo",
