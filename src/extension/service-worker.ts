@@ -1,113 +1,102 @@
-import { SupportPlatform } from "./constants";
-import { facebookUpdate, instagramUpdate, telegramUpdate } from "./support";
 const _ = require("lodash");
 
-var to: string;
+var to: string = "english"; 
 var current: string;
 
-const debounceHandler = _.debounce(async function (text: string, update: any) {
+// Debounce function để tối ưu API request
+const debounceHandler = _.debounce(async function (
+  text: string,
+  update: (translatedText: string) => void
+) {
   try {
-    const language = await chrome.storage.local.get(["la"]);
+    const url = "https://df48-118-70-168-155.ngrok-free.app/api/generate";
 
-    const url = "https://api.caipacity.com/v1/chat/completions";
-    const xhr = new XMLHttpRequest();
     const headers = {
       "Content-Type": "application/json",
-      Authorization: "Bearer 8a3c3770-c747-4c42-927e-fa071406607d",
     };
+
     const data = {
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "user",
-          content: `translate into ${to ? to : language.la}: "${text}"`,
+      model: "llama3.1",
+      prompt: `Translate the following text to ${to}: "${text}".`,
+      stream: false,
+      format: {
+        type: "object",
+        properties: {
+          translation: { type: "string" },
         },
-      ],
+        required: ["translation"],
+      },
     };
 
-    xhr.addEventListener("readystatechange", function () {
-      if (this.readyState === this.DONE) {
-        console.log("trigger");
-
-        const response = JSON.parse(xhr.responseText);
-        const regex = /"(.*?)"/;
-
-        const match = response.choices[0].message.content.match(regex);
-
-        let result = response.choices[0].message.content;
-
-        if (match) {
-          result = match[1];
-        }
-        current = result;
-        update(result);
-      }
+    const response = await fetch(url, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(data),
     });
 
-    xhr.open("POST", url, true);
-    xhr.setRequestHeader("Content-Type", headers["Content-Type"]);
-    xhr.setRequestHeader("Authorization", headers["Authorization"]);
-    xhr.send(JSON.stringify(data));
+    if (!response.ok) throw new Error("API request failed");
+
+    const responseData = await response.json();
+
+    const res = JSON.parse(responseData.response);
+    console.log({ res });
+    const translatedText = res.translation || text; // Nếu không có dữ liệu, giữ nguyên văn bản gốc
+
+    console.log(translatedText);
+    current = translatedText;
+    update(translatedText);
   } catch (error) {
-    console.log(error);
+    console.error("Translation error:", error);
   }
-}, 1000);
+},
+1000);
 
-document.addEventListener("keyup", function (event: Event) {
-  // if (event instanceof KeyboardEvent && event.key === "Enter") {
-  //   event.preventDefault();
-    
-  //   // remove data in LRU cache
-
-  // }
+// Hàm xử lý khi input thay đổi
+function handleInputChange(event: Event) {
   if (!event || !event.target) return;
 
   const targetElement = event.target as HTMLInputElement;
+  if (
+    !targetElement.getAttribute("aria-label")?.toLowerCase().includes("message")
+  )
+    return;
 
-  if (current === targetElement.textContent) return;
+  const text = targetElement.textContent;
+  if (text?.length === 0 || current === text) return;
 
-  switch (window.location.hostname) {
-    case SupportPlatform.Facebook:
-      if (targetElement.getAttribute("aria-label") === "Message") {
-        var text = targetElement.textContent;
-        if (text?.length === 0) return;
-        debounceHandler(text, facebookUpdate);
-      }
-      break;
-    case SupportPlatform.Instagram:
-      if (targetElement.getAttribute("aria-label") === "Message") {
-        var text = targetElement.textContent;
-        if (text?.length === 0) return;
-        debounceHandler(text, instagramUpdate);
-      }
-      break;
-    default:
-      break;
-  }
-});
+  debounceHandler(text, (translatedText: string) => {
+    console.log({ translatedText });
+    targetElement.textContent = translatedText;
+  });
+}
 
-document.addEventListener("input", function (event: Event) {
-  if (!event || !event.target) return;
-
+// Lắng nghe sự kiện focus để phát hiện ô nhập tin nhắn
+document.addEventListener("focusin", (event) => {
   const targetElement = event.target as HTMLInputElement;
+  if (
+    !targetElement.getAttribute("aria-label")?.toLowerCase().includes("message")
+  )
+    return;
 
-  if (current === targetElement.textContent) return;
+  // Sử dụng MutationObserver để theo dõi thay đổi nội dung input
+  const observer = new MutationObserver(() => {
+    handleInputChange(event);
+  });
 
-  switch (window.location.hostname) {
-    case SupportPlatform.Telegram:
-      if (targetElement.getAttribute("aria-label") === "Message") {
-        var text = targetElement.textContent;
-        if (text?.length === 0) return;
+  observer.observe(targetElement, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+  });
 
-        debounceHandler(text, telegramUpdate);
-      }
-      break;
-    default:
-      break;
-  }
+  // Ngắt quan sát khi người dùng mất focus
+  targetElement.addEventListener("focusout", () => observer.disconnect(), {
+    once: true,
+  });
 });
 
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+// Lắng nghe tin nhắn từ background script để cập nhật ngôn ngữ đích
+chrome.runtime.onMessage.addListener((request) => {
   if (request.data) {
     to = request.data.to;
   }
